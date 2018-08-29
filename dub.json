@@ -1,0 +1,11 @@
+{
+	"name": "fully-indexable-dictionary",
+	"authors": [
+		"kotet"
+	],
+	"description": "Fully Indexable Dictionary",
+	"copyright": "Copyright © 2018, kotet",
+	"license": "MIT",
+	"targetPath": "build",
+	"workingDirectory": "build"
+}
