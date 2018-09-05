@@ -43,18 +43,18 @@ public:
 
 	size_t rank1(size_t i)
 	{
-		assert(i <= B.length * ubyte.sizeof * 8, "Range violation");
+		assert(i <= B.length * BT.sizeof * 8, "Range violation");
 
 		import std.algorithm : min;
 		import core.bitop : popcnt;
 
 		auto ib = i / 8;
-		ubyte[] tmp = cast(ubyte[]) B[ib - (ib % sb) .. min($, ib - (ib % sb) + sb)];
+		ubyte[] tmp = cast(ubyte[]) B[min(ib - (ib % sb), $ - 1) .. min($, ib - (ib % sb) + sb)];
 		tmp ~= new ubyte[](sb - tmp.length);
 		BT mask = (1UL << (i % s)) - 1;
 
 		auto a = L[ib / lb];
-		auto b = S[ib / sb];
+		auto b = S[min(ib / sb, $ - 1)];
 		auto c = popcnt((cast(BT[]) tmp)[0] & mask);
 
 		return a + b + c;
@@ -67,41 +67,46 @@ public:
 		return i - rank1(i);
 	}
 
-	unittest
+	size_t select1(size_t i)
 	{
-		ulong[] test = [0b1_0100_0111_0101];
+		long l = -1;
+		size_t r = B.length * BT.sizeof * 8;
 
-		FullyIndexableDictionary fib;
-		fib.init(test);
-
-		assert(fib.rank(0) == 0);
-		assert(fib.rank(2) == 1);
-		assert(fib.rank(13) == 7);
-
-		assert(fib.rank0(0) == 0);
-		assert(fib.rank0(2) == 1);
-		assert(fib.rank0(13) == 6);
-	}
-
-	unittest
-	{
-		import std.algorithm : map;
-		import std.random : uniform;
-		import std.range : iota, array;
-		import std.bitmanip : BitArray;
-		import std.datetime.stopwatch : benchmark;
-
-		auto N = 10 ^^ 6;
-		ulong[] test = iota(N).map!(x => cast(ulong) uniform(0, ulong.max)).array;
-
-		FullyIndexableDictionary fib;
-		fib.init(test);
-		auto reference = (ulong[] b, size_t i) => BitArray(b.dup, i).count();
-
-		foreach (_; 0 .. 1000)
+		while (1 < r - l)
 		{
-			auto i = uniform(0, N * ulong.sizeof * 8 + 1);
-			assert(fib.rank(i) == reference(test, i));
+			size_t m = l + (r - l) / 2;
+			if (this.rank1(m) < i)
+			{
+				l = m;
+			}
+			else
+			{
+				r = m;
+			}
 		}
+		return r;
 	}
+
+	alias select = select1;
+
+	size_t select0(size_t i)
+	{
+		long l = -1;
+		size_t r = B.length * BT.sizeof * 8;
+
+		while (1 < r - l)
+		{
+			size_t m = l + (r - l) / 2;
+			if (this.rank0(m) < i)
+			{
+				l = m;
+			}
+			else
+			{
+				r = m;
+			}
+		}
+		return r;
+	}
+
 }
